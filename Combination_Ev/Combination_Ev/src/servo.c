@@ -1,136 +1,126 @@
-#include <avr/interrupt.h>
+/*
+ * servo.c - ATmega328P Servo Motor Control Library
+ * Uses Timer/Counter1 for precise PWM generation.
+ */
+
+// --- CPU 클럭 설정 ---
+#define F_CPU 16000000UL
+
 #include <avr/io.h>
+#include <util/delay.h>
+#include <stdint.h>
+#include "servo.h" // servo_init()등의 함수 프로토타입을 위해 포함
 
-#include "servo.h"
+// =================================================================================
+// --- 하드웨어 핀 및 상수 정의 ---
+// =================================================================================
 
-// 서보 모터 제어 상수
-#define SERVO_MIN_PULSE 1000    // 0도 위치 (1ms 펄스)
-#define SERVO_MAX_PULSE 2000    // 180도 위치 (2ms 펄스)
-#define SERVO_PERIOD 20000      // 20ms 주기 (50Hz)
+// 모든 상수는 servo.h에서 정의됨
 
-// 문 위치 정의
-#define DOOR_CLOSED_ANGLE 0     // 문 닫힘: 0도
-#define DOOR_OPEN_ANGLE 90      // 문 열림: 90도
-
+// =================================================================================
+// --- 전역 변수 ---
+// =================================================================================
 static volatile uint8_t servo_angle = DOOR_CLOSED_ANGLE;
-static volatile uint16_t servo_pulse_width = SERVO_MIN_PULSE;
+
+// =================================================================================
+// --- 함수 구현 ---
+// =================================================================================
 
 /**
- * @brief 서보 모터 초기화
- * Timer2를 이용한 PWM 모드 설정 (PD3 핀 - OC2B)
+ * @brief 서보 모터 초기화. Timer1을 Fast PWM 모드로 설정합니다.
  */
-void servo_init() {
-    // 서보 모터 핀을 출력으로 설정
+void servo_init(void) {
+    // 1. PB1(OC1A) 핀을 출력으로 설정
     SERVO_DDR |= (1 << SERVO_PIN);
-    SERVO_PORT &= ~(1 << SERVO_PIN);
-    
-    // Timer2 설정 (Fast PWM 모드, 16MHz/64 = 250kHz)
-    TCCR2A = (1 << COM2B1) | (1 << WGM21) | (1 << WGM20);  // Fast PWM, Clear OC2B on Compare Match
-    TCCR2B = (1 << WGM22) | (1 << CS22);                   // Fast PWM, Prescaler 64
-    
-    // Timer2 인터럽트 활성화
-    TIMSK2 |= (1 << TOIE2);  // Overflow interrupt enable
-    
+
+    // 2. Fast PWM 모드 (TOP=ICR1, Mode 14) 설정
+    TCCR1A |= (1 << WGM11);
+    TCCR1B |= (1 << WGM13) | (1 << WGM12);
+
+    // 3. 비반전 모드 설정 (펄스가 OCR1A 값에 따라 길어짐)
+    TCCR1A |= (1 << COM1A1);
+
+    // 4. 주기(Period) 설정 (50Hz -> 20ms)
+    // 16MHz / 8(prescaler) / 40000(ticks) = 50Hz
+    ICR1 = 39999; 
+
+    // 5. 8분주 프리스케일러로 타이머 시작
+    TCCR1B |= (1 << CS11);
+
     // 초기 위치를 문 닫힘 상태로 설정
     servo_set_angle(DOOR_CLOSED_ANGLE);
-    
-    // 전역 인터럽트 활성화
-    sei();
 }
 
 /**
- * @brief 서보 모터 각도 설정
- * @param angle 설정할 각도 (0~180도)
+ * @brief 서보 모터의 목표 각도를 설정합니다.
+ * @param angle 설정할 각도 (0 ~ 180도)
  */
 void servo_set_angle(uint8_t angle) {
-    if (angle > 180) angle = 180;
-    
+    if (angle > 180) {
+        angle = 180;
+    }
     servo_angle = angle;
     
-    // 각도를 펄스 폭으로 변환 (1000us ~ 2000us)
-    servo_pulse_width = SERVO_MIN_PULSE + ((uint32_t)angle * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 180;
+    // 각도(0-180)를 펄스 폭(1000-2000us)으로 선형 변환
+    uint16_t pulse_width_us = SERVO_MIN_PULSE + ((uint32_t)angle * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 180;
     
-    // PWM 듀티 사이클 계산 및 설정
-    // Timer2는 8비트이므로 적절한 비율로 조정
-    uint8_t duty_cycle = (uint8_t)((servo_pulse_width * 255UL) / SERVO_PERIOD);
-    OCR2B = duty_cycle;
+    // 펄스 폭(us)을 타이머 OCR1A 값으로 변환
+    // 타이머 클럭 = 16MHz / 8 = 2MHz -> 1틱당 0.5us
+    // OCR 값 = 펄스폭(us) / 0.5(us/틱) = 펄스폭 * 2
+    OCR1A = pulse_width_us * 2;
 }
 
 /**
- * @brief 엘리베이터 문 열기
+ * @brief 엘리베이터 문을 엽니다.
  */
-void servo_door_open() {
+void servo_door_open(void) {
     servo_set_angle(DOOR_OPEN_ANGLE);
-    servo_delay_ms(1000);  // 문이 완전히 열릴 때까지 대기
+    _delay_ms(1000); // 문이 완전히 열릴 때까지 대기
 }
 
 /**
- * @brief 엘리베이터 문 닫기
+ * @brief 엘리베이터 문을 닫습니다.
  */
-void servo_door_close() {
+void servo_door_close(void) {
     servo_set_angle(DOOR_CLOSED_ANGLE);
-    servo_delay_ms(1000);  // 문이 완전히 닫힐 때까지 대기
+    _delay_ms(1000); // 문이 완전히 닫힐 때까지 대기
 }
 
 /**
- * @brief 현재 문 상태 확인
+ * @brief 현재 문이 열려있는지 확인합니다.
  * @return 1: 문 열림, 0: 문 닫힘
  */
-uint8_t servo_door_is_open() {
-    return (servo_angle > 45) ? 1 : 0;  // 45도 이상이면 열린 것으로 판단
+uint8_t servo_door_is_open(void) {
+    // 45도를 기준으로 열림/닫힘 판단
+    return (servo_angle > 45) ? 1 : 0;
 }
 
 /**
- * @brief 서보 모터를 특정 각도로 부드럽게 이동
+ * @brief 서보 모터를 특정 각도로 부드럽게 이동시킵니다.
  * @param target_angle 목표 각도
- * @param step_delay 각 스텝 간 지연시간 (ms)
+ * @param step_delay 각 스텝(1도) 사이의 지연시간 (ms)
  */
 void servo_move_smooth(uint8_t target_angle, uint16_t step_delay) {
-    if (target_angle > 180) target_angle = 180;
-    
-    int8_t direction = (target_angle > servo_angle) ? 1 : -1;
-    
-    while (servo_angle != target_angle) {
-        servo_angle += direction;
-        servo_set_angle(servo_angle);
-        servo_delay_ms(step_delay);
+    if (target_angle > 180) {
+        target_angle = 180;
     }
-}
-
-/**
- * @brief 간단한 밀리초 지연 함수
- * @param ms 지연할 밀리초
- */
-void servo_delay_ms(uint16_t ms) {
-    volatile uint32_t count;
-    for (uint16_t i = 0; i < ms; i++) {
-        // 16MHz에서 약 1ms 지연 (대략적인 값)
-        for (count = 0; count < 4000; count++) {
-            asm volatile ("nop");
+    
+    // 현재 각도와 목표 각도가 같으면 바로 리턴
+    if (servo_angle == target_angle) {
+        return;
+    }
+    
+    // 현재 각도에서 목표 각도까지 1도씩 이동
+    if (target_angle > servo_angle) {
+        for (uint8_t angle = servo_angle + 1; angle <= target_angle; angle++) {
+            servo_set_angle(angle);
+            _delay_ms(step_delay);
+        }
+    } else {
+        for (uint8_t angle = servo_angle - 1; angle >= target_angle && angle <= servo_angle; angle--) {
+            servo_set_angle(angle);
+            _delay_ms(step_delay);
+            if (angle == 0) break;  // uint8_t 언더플로우 방지
         }
     }
 }
-
-/**
- * @brief Timer2 오버플로우 인터럽트 서비스 루틴
- * PWM 신호 생성을 위한 소프트웨어 PWM 구현
- */
-ISR(TIMER2_OVF_vect) {
-    static uint16_t pwm_counter = 0;
-    
-    pwm_counter++;
-    
-    // 20ms 주기로 PWM 신호 생성
-    if (pwm_counter >= (SERVO_PERIOD / 4)) {  // Timer2 오버플로우 주기 고려
-        pwm_counter = 0;
-        SERVO_PORT |= (1 << SERVO_PIN);  // HIGH 시작
-    }
-    
-    // 펄스 폭만큼 HIGH 유지 후 LOW
-    if (pwm_counter >= (servo_pulse_width / 4)) {
-        SERVO_PORT &= ~(1 << SERVO_PIN);  // LOW
-    }
-}
-
-
-//test
