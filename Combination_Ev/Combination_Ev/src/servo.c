@@ -12,10 +12,18 @@
 #include "servo.h" // servo_init()등의 함수 프로토타입을 위해 포함
 
 // =================================================================================
-// --- 하드웨어 핀 및 상수 정의 ---
+// --- 상수 정의 ---
 // =================================================================================
 
-// 모든 상수는 servo.h에서 정의됨
+// 서보 모터 제어 상수
+#define SERVO_MIN_PULSE 500     // 0도 위치 (500us = 0.5ms 펄스) // 1번 서보모터
+#define SERVO_MAX_PULSE 2400    // 180도 위치 (2400us = 2.4ms 펄스) // 1번 서보모터
+// #define SERVO_MIN_PULSE 600     // 0도 위치 (600us = 0.6ms 펄스) // 2번 서보모터
+// #define SERVO_MAX_PULSE 2420    // 180도 위치 (2400us = 2.4ms 펄스) // 2번 서보모터
+
+// 문 위치 정의
+#define DOOR_CLOSED_ANGLE 0     // 문 닫힘: 0도
+#define DOOR_OPEN_ANGLE 90      // 문 열림: 90도
 
 // =================================================================================
 // --- 전역 변수 ---
@@ -61,7 +69,7 @@ void servo_set_angle(uint8_t angle) {
     }
     servo_angle = angle;
     
-    // 각도(0-180)를 펄스 폭(1000-2000us)으로 선형 변환
+    // 각도(0-180)를 펄스 폭(500-2500us)으로 선형 변환
     uint16_t pulse_width_us = SERVO_MIN_PULSE + ((uint32_t)angle * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)) / 180;
     
     // 펄스 폭(us)을 타이머 OCR1A 값으로 변환
@@ -96,6 +104,16 @@ uint8_t servo_door_is_open(void) {
 }
 
 /**
+ * @brief 가변 지연시간을 위한 사용자 정의 지연 함수
+ * @param ms 지연시간 (밀리초)
+ */
+static void delay_ms_variable(uint16_t ms) {
+    while (ms--) {
+        _delay_ms(1);
+    }
+}
+
+/**
  * @brief 서보 모터를 특정 각도로 부드럽게 이동시킵니다.
  * @param target_angle 목표 각도
  * @param step_delay 각 스텝(1도) 사이의 지연시간 (ms)
@@ -114,12 +132,12 @@ void servo_move_smooth(uint8_t target_angle, uint16_t step_delay) {
     if (target_angle > servo_angle) {
         for (uint8_t angle = servo_angle + 1; angle <= target_angle; angle++) {
             servo_set_angle(angle);
-            _delay_ms(step_delay);
+            delay_ms_variable(step_delay);
         }
     } else {
         for (uint8_t angle = servo_angle - 1; angle >= target_angle && angle <= servo_angle; angle--) {
             servo_set_angle(angle);
-            _delay_ms(step_delay);
+            delay_ms_variable(step_delay);
             if (angle == 0) break;  // uint8_t 언더플로우 방지
         }
     }

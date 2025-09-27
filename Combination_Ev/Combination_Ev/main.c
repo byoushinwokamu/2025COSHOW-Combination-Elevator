@@ -28,6 +28,7 @@ int main(void)
         test_servo_basic();
         _delay_ms(3000);
         
+		/*
         // === 테스트 2: 엘리베이터 문 제어 테스트 ===
         test_servo_door_control();
         _delay_ms(3000);
@@ -39,6 +40,7 @@ int main(void)
         // === 테스트 4: 스위프 테스트 (0도 ~ 180도) ===
         test_servo_sweep();
         _delay_ms(5000);
+		*/
     }
 }
 
