@@ -24,7 +24,7 @@ void ic595_update()
 
 void ic595_fndset(uint8_t num)
 {
-  if (number > 9) // Out of bound
+  if (num > 9) // Out of bound
   {
     output_buf |= (0b1111UL << SEG_A_BIT);
     return;
@@ -32,7 +32,7 @@ void ic595_fndset(uint8_t num)
   else // Set bits after clear
   {
     output_buf &= ~(0b1111UL << SEG_A_BIT);
-    output_buf |= ((uint32_t)number << SEG_A_BIT);
+    output_buf |= ((uint32_t)num << SEG_A_BIT);
   }
 }
 

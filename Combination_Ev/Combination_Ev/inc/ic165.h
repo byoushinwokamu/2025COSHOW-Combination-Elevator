@@ -2,6 +2,7 @@
 #define _IC165_H_
 
 #include <avr/io.h>
+#include <util/delay.h>
 #include <stdint.h>
 
 #include "pinmacro.h"
