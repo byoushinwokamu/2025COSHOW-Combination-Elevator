@@ -1,6 +1,8 @@
 #ifndef _STEPPER_H_
 #define _STEPPER_H_
 
+#include "pinmacro.h"
+
 #include <stdint.h>
 
 void stepper_init();

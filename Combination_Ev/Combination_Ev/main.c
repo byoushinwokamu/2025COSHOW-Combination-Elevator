@@ -1,14 +1,12 @@
-#define F_CPU 16000000UL
+#include "ic165.h"
+#include "ic595.h"
+#include "pinmacro.h"
 
 #include <stdint.h>
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
-
-#include "ic165.h"
-#include "ic595.h"
-#include "pinmacro.h"
 
 volatile uint16_t swinput = 0xFFFF;
 volatile uint16_t g_light_timer_count = 0; // 3초 조명 타이머를 위한 카운트 변수

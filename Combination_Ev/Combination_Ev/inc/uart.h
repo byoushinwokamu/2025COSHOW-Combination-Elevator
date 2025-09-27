@@ -1,6 +1,8 @@
 #ifndef _UART_H_
 #define _UART_H_
 
+#include "pinmacro.h"
+
 #include <stdint.h>
 
 void uart_init(uint16_t baudrate);

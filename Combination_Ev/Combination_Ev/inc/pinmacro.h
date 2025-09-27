@@ -1,6 +1,8 @@
 #ifndef _PINMACRO_H_
 #define _PINMACRO_H_
 
+#define F_CPU 16000000UL
+
 // 74 Series IC Control Pins
 #define RCLK_595_DDR DDRB
 #define RCLK_595_PORT PORTB

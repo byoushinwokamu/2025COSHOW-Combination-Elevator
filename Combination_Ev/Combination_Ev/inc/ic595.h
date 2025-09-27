@@ -1,11 +1,11 @@
 #ifndef _IC595_H_
 #define _IC595_H_
 
-#include <avr/io.h>
-#include <util/delay.h>
-#include <stdint.h>
-
 #include "pinmacro.h"
+
+#include <avr/io.h>
+#include <stdint.h>
+#include <util/delay.h>
 
 void ic595_update();
 void ic595_fndset(uint8_t num);
