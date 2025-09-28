@@ -1,6 +1,8 @@
 #ifndef _HX711_H_
 #define _HX711_H_
 
+#include "pinmacro.h"
+
 #include <stdint.h>
 
 void hx711_init();

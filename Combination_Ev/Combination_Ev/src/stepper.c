@@ -211,4 +211,8 @@ void stepper_move_to_floor(uint8_t target_floor, uint8_t current_floor) {
     } else {
         stepper_move_steps(-steps_to_move, STEPPER_DIRECTION_CCW);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> main
