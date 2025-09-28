@@ -1,7 +1,7 @@
 #include "uart.h"
 
-#define HEADER_STATUS 0b00000000U
-#define HEADER_ASSIGN 0b11111111U
+extern volatile uint8_t task_queue[5];
+extern volatile uint8_t direction;
 
 void uart_init(uint16_t baudrate)
 {
@@ -18,8 +18,8 @@ void uart_init(uint16_t baudrate)
   // transmit enable
   UCSR0B |= (1 << TXEN0);
 
-  // receive enable
-  UCSR0B |= (1 << RXEN0);
+  // receive(interrupt) enable
+  UCSR0B |= (1 << RXEN0) | (1 << RXCIE0);
 }
 
 void uart_tx_byte(uint8_t data)
@@ -44,4 +44,39 @@ void uart_tx_assign(uint8_t asgn)
 {
   uart_tx_byte(HEADER_ASSIGN);
   uart_tx_byte(asgn);
+}
+
+void enqueue(uint8_t floor, uint8_t dir)
+{
+  floor <<= UART_FLOOR_BIT;
+  dir <<= UART_DIRECTION_BIT;
+  for (uint8_t i = 0; i < 4; i++)
+  {
+    if (task_queue[i])
+    {
+      if ((dir & (1 << 7)) != (direction & (1 << 7))) // Opposite
+        continue;
+      else if (dir & (1 << 7)) // Descending
+      {
+        if (floor < (task_queue[i] & (0b11 << 5))) // Under
+          continue;
+      }
+      else // Ascending
+      {
+        if (floor > (task_queue[i] & (0b11 << 5))) // Over
+          continue;
+      }
+    }
+    task_queue[i] = (floor | dir);
+    break;
+  }
+}
+
+void dequeue()
+{
+  task_queue[0] = task_queue[1];
+  task_queue[1] = task_queue[2];
+  task_queue[2] = task_queue[3];
+  task_queue[3] = task_queue[4];
+  task_queue[4] = 0;
 }

@@ -1,14 +1,17 @@
 #include "ic165.h"
 #include "pinmacro.h"
+#include "uart.h"
 
-#define EV_RX 0
-#define EV_TX 1
+// #define EV_RX 0
+// #define EV_TX 1
 
 extern volatile uint16_t swinput;
 extern volatile uint16_t door_holding;
 extern volatile uint8_t ev_status;
-volatile uint8_t score = 0;
-volatile uint8_t evrt = EV_RX; // distinguish between EV A / EV B
+volatile uint8_t score_a = 0;
+volatile uint8_t score_b = 0;
+// volatile uint8_t evrt = EV_RX; // distinguish between EV A / EV B
+volatile uint16_t rxbuf = 0;
 
 // PC3: Home Sw.
 // PC4: Door Sensor Sw.
@@ -77,7 +80,40 @@ ISR(PCINT2_vect)
 // UART Receive
 ISR(USART_RX_vect)
 {
-  if (evrt == EV_RX)
+  UCSR0A; // Error flag
+  rxbuf = (rxbuf << 8) | UDR0;
+  if (!((rxbuf >> 8) & 0xF0)) // Isn't a header sign?
+    return;                   // Then wait for next byte
+
+  if ((rxbuf >> 8) & 0xF0) // HEADER_ASSIGN; This is E/V A
   {
+    if (rxbuf & 0x0F) // ASSIGN_NO: I must go
+    {
+      ///////////// Add to queue
+    }
+  }
+  else // HEADER_STATUS; This is E/V B
+  {
+    // ******************* NEED TO EVALUATE STAT *********
+    // AND COMPARE
+    uart_tx_status(0);
+
+    if (1)
+    {
+      //////////// Add to queue
+      uart_tx_assign(ASSIGN_OK); // I will go
+    }
+    else
+      uart_tx_assign(ASSIGN_NO); // You must go
+  }
+  if ((rxbuf >> 8) & 0xF0) // HEADER_ASSIGN
+  {
+  }
+  else // HEADER_STATUS
+  {
+    if (rxbuf & 0xFF > 0)        // Compare with my status
+      uart_tx_assign(ASSIGN_OK); // I will go
+    else
+      uart_tx_assign(ASSIGN_NO); // You must go
   }
 }

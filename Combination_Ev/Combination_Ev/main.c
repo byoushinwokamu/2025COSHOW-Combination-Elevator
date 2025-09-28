@@ -17,6 +17,8 @@ volatile uint16_t swinput = 0xFFFF;
 volatile uint16_t door_holding = 0;
 volatile uint8_t ev_status = IDLE;
 volatile uint16_t g_light_timer_count = 0; // 3초 조명 타이머를 위한 카운트 변수
+volatile uint8_t task_queue[5];
+volatile uint8_t direction = DIR_IDLE;
 
 void init();
 
@@ -29,19 +31,24 @@ int main(void)
     {
     case ST_IDLE:
       break;
+
     case ST_MOVING:
       break;
+
     case ST_DOOR_OPENING:
       servo_door_open();
       break;
+
     case ST_DOOR_OPENED:
       // Hold until time elapsed or close button is pushed
       if (++door_holding == DOOR_HOLD_TIME) ev_status = ST_DOOR_CLOSING;
       break;
+
     case ST_DOOR_CLOSING:
       servo_door_close();
       break;
     }
+
     _delay_ms(50);
   }
 }

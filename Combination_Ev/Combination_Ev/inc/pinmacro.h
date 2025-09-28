@@ -10,6 +10,14 @@
 #define ST_DOOR_OPENED 3
 #define ST_DOOR_CLOSING 4
 
+#define DIR_ASCENDING 0
+#define DIR_DESCENDING 1
+#define DIR_IDLE 2
+
+// UART data bit
+#define UART_FLOOR_BIT 5
+#define UART_DIRECTION_BIT 7
+
 // 74 Series IC Control Pins
 #define RCLK_595_DDR DDRB
 #define RCLK_595_PORT PORTB
