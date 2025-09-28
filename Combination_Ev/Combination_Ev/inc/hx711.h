@@ -1,7 +1,13 @@
 #ifndef LOADCELL_H_
 #define LOADCELL_H_
 
+<<<<<<< HEAD
 #include <stdbool.h>
+=======
+#include "pinmacro.h"
+
+#include <stdint.h>
+>>>>>>> main
 
 // --- 사용자 설정 ---
 // 이 값들을 수정하여 엘리베이터의 사양을 쉽게 변경할 수 있습니다.

@@ -1,16 +1,21 @@
-#define F_CPU 16000000UL
-
-#include <stdint.h>
-
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <util/delay.h>
-
+#include "hx711.h"
 #include "ic165.h"
 #include "ic595.h"
 #include "pinmacro.h"
+#include "servo.h"
+#include "stepper.h"
+#include "uart.h"
+
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdint.h>
+#include <util/delay.h>
+
+#define DOOR_HOLD_TIME = 1000;
 
 volatile uint16_t swinput = 0xFFFF;
+volatile uint16_t door_holding = 0;
+volatile uint8_t ev_status = IDLE;
 volatile uint16_t g_light_timer_count = 0; // 3초 조명 타이머를 위한 카운트 변수
 
 void init();
@@ -20,6 +25,7 @@ int main(void)
   init();
   while (1)
   {
+<<<<<<< HEAD
     // 모든 스위치 상태 읽기	
     swinput = ic165_read();
 
@@ -29,122 +35,26 @@ int main(void)
 
     // 카 내부 1층 버튼
     if (!(swinput & (1 << SW_CAR_1F_BIT)))
+=======
+    switch (ev_status)
+>>>>>>> main
     {
-      ic595_ledset(LED_CAR_1F_BIT, 1);
-      ic595_fndset(1);
+    case ST_IDLE:
+      break;
+    case ST_MOVING:
+      break;
+    case ST_DOOR_OPENING:
+      servo_door_open();
+      break;
+    case ST_DOOR_OPENED:
+      // Hold until time elapsed or close button is pushed
+      if (++door_holding == DOOR_HOLD_TIME) ev_status = ST_DOOR_CLOSING;
+      break;
+    case ST_DOOR_CLOSING:
+      servo_door_close();
+      break;
     }
-    // 카 내부 2층 버튼
-    else if (!(swinput & (1 << SW_CAR_2F_BIT)))
-    {
-      ic595_ledset(LED_CAR_2F_BIT, 1);
-      ic595_fndset(2);
-    }
-    // 카 내부 3층 버튼
-    else if (!(swinput & (1 << SW_CAR_3F_BIT)))
-    {
-      ic595_ledset(LED_CAR_3F_BIT, 1);
-      ic595_fndset(3);
-    }
-    // 카 내부 4층 버튼
-    else if (!(swinput & (1 << SW_CAR_4F_BIT)))
-    {
-      ic595_ledset(LED_CAR_4F_BIT, 1);
-      ic595_fndset(4);
-    }
-    // 외부 1층 호출 (UP)
-    else if (!(swinput & (1 << SW_CALL_1F_UP_BIT)))
-    {
-      ic595_ledset(LED_CALL_1F_UP_BIT, 1);
-    }
-    // 외부 2층 호출 (UP)
-    else if (!(swinput & (1 << SW_CALL_2F_UP_BIT)))
-    {
-      ic595_ledset(LED_CALL_2F_UP_BIT, 1);
-    }
-    // 외부 2층 호출 (DOWN)
-    else if (!(swinput & (1 << SW_CALL_2F_DOWN_BIT)))
-    {
-      ic595_ledset(LED_CALL_2F_DOWN_BIT, 1);
-    }
-    // 외부 3층 호출 (UP)
-    else if (!(swinput & (1 << SW_CALL_3F_UP_BIT)))
-    {
-      ic595_ledset(LED_CALL_3F_UP_BIT, 1);
-    }
-    // 외부 3층 호출 (DOWN)
-    else if (!(swinput & (1 << SW_CALL_3F_DOWN_BIT)))
-    {
-      ic595_ledset(LED_CALL_3F_DOWN_BIT, 1);
-    }
-    // 외부 4층 호출 (DOWN)
-    else if (!(swinput & (1 << SW_CALL_4F_DOWN_BIT)))
-    {
-      ic595_ledset(LED_CALL_4F_DOWN_BIT, 1);
-    }
-    // 카 내부 문 열림 버튼
-    else if (!(swinput & (1 << SW_CAR_OPEN_BIT)))
-    {
-      ic595_ledset(LED_CAR_OPEN_BIT, 1);
-    }
-    // 카 내부 문 닫힘 버튼
-    else if (!(swinput & (1 << SW_CAR_CLOSE_BIT)))
-    {
-      ic595_ledset(LED_CAR_CLOSE_BIT, 1);
-    }
-    // 카 내부 비상벨 버튼
-    else if (!(swinput & (1 << SW_CAR_BELL_BIT)))
-    {
-      ic595_ledset(LED_CAR_BELL_BIT, 1);
-    }
-    // 아무 버튼도 눌리지 않았을 경우
-    else
-    {
-      // 모든 층/호출/기능 LED를 끔
-      ic595_ledset(LED_CAR_1F_BIT, 0);
-      ic595_ledset(LED_CAR_2F_BIT, 0);
-      ic595_ledset(LED_CAR_3F_BIT, 0);
-      ic595_ledset(LED_CAR_4F_BIT, 0);
-      ic595_ledset(LED_CALL_1F_UP_BIT, 0);
-      ic595_ledset(LED_CALL_2F_UP_BIT, 0);
-      ic595_ledset(LED_CALL_2F_DOWN_BIT, 0);
-      ic595_ledset(LED_CALL_3F_UP_BIT, 0);
-      ic595_ledset(LED_CALL_3F_DOWN_BIT, 0);
-      ic595_ledset(LED_CALL_4F_DOWN_BIT, 0);
-      ic595_ledset(LED_CAR_OPEN_BIT, 0);
-      ic595_ledset(LED_CAR_CLOSE_BIT, 0);
-      ic595_ledset(LED_CAR_BELL_BIT, 0);
-      // (참고: 실제 엘리베이터는 현재 층을 표시해야 하므로,
-      //  이 부분은 나중에 '현재 층' 변수를 받아 처리하도록 수정해야 합니다.)
-      ic595_fndset(10); // 7세그먼트 끄기
-    }
-
-    // ★★★★★★★★★★★★★   추가된 조명 제어 로직   ★★★★★★★★★★★★★
-    // --------------------------------------------------------------------------
-    uint8_t should_light_be_on = 0; // 조명을 켤지 결정하는 플래그 변수
-
-    // 조건 1: 카 내부 버튼이 눌렸는지 확인
-    const uint16_t car_buttons_mask = 0x007F; // 카 내부 버튼(비트 0~6) 마스크
-    if ((swinput & car_buttons_mask) != car_buttons_mask)
-    {
-      should_light_be_on = 1; // 켜기
-    }
-
-    // 조건 2: 리미트 스위치가 눌렸는지 확인 (OR 조건)
-    if (!(LS_HOME_PIN_REG & (1 << LS_HOME_PIN)) ||
-        !(LS_DOOR_OPEN_PIN_REG & (1 << LS_DOOR_OPEN_PIN)) ||
-        !(LS_DOOR_CLOSED_PIN_REG & (1 << LS_DOOR_CLOSED_PIN)))
-    {
-      should_light_be_on = 1; // 켜기
-    }
-
-    // 최종 결정된 상태에 따라 조명 LED 제어
-    ic595_ledset(LED_CAR_LIGHT_BIT, should_light_be_on);
-    // --------------------------------------------------------------------------
-
-    // 최종 출력 상태를 시프트 레지스터로 전송
-    ic595_update();
-
-    _delay_ms(50); // 루프 지연
+    _delay_ms(50);
   }
 }
 
