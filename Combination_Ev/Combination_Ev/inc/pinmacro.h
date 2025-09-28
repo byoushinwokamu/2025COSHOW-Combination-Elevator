@@ -55,9 +55,9 @@
 #define STEPPER_4_PIN PB0
 
 // Servo Motor Control Pin (PWM)
-#define SERVO_DDR DDRD
-#define SERVO_PORT PORTD
-#define SERVO_PIN PD3
+#define SERVO_DDR DDRB
+#define SERVO_PORT PORTB
+#define SERVO_PIN PB1
 
 // HX711 Load Cell Control Pins
 #define HX711_DT_DDR DDRC
