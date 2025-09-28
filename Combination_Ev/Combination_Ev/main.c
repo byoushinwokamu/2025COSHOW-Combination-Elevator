@@ -9,6 +9,9 @@
 #include <util/delay.h>
 
 volatile uint16_t swinput = 0xFFFF;
+volatile enum { IDLE,
+                MOVING,
+                DOOR_OPEN } ev_status = IDLE;
 volatile uint16_t g_light_timer_count = 0; // 3초 조명 타이머를 위한 카운트 변수
 
 void init();
