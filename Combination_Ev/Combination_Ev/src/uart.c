@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 /*
  * UART driver for ATmega328P (F_CPU = 16 MHz)
  * - Mode: 8N1, Double Speed (U2X0 = 1)
@@ -68,6 +69,8 @@ void uart_send_string(const char *str)
     }
 }
 =======
+=======
+>>>>>>> main
 #include "uart.h"
 
 #define HEADER_STATUS 0b00000000U
@@ -114,5 +117,9 @@ void uart_tx_assign(uint8_t asgn)
 {
   uart_tx_byte(HEADER_ASSIGN);
   uart_tx_byte(asgn);
+<<<<<<< HEAD
+}
+>>>>>>> main
+=======
 }
 >>>>>>> main
