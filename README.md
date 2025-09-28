@@ -11,7 +11,10 @@
 # 필독!!! main 브랜치 변경사항 자기 브랜치로 당겨오는법
 git 최상위 폴더에서
 ```bash
+git switch main
 git pull
 git switch (자기브랜치)
+git pull
 git merge main
+git push
 ```
