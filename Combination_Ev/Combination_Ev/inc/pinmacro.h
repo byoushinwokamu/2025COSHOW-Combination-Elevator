@@ -3,6 +3,13 @@
 
 #define F_CPU 16000000UL
 
+// E/V Status Macro
+#define ST_IDLE 0
+#define ST_MOVING 1
+#define ST_DOOR_OPENING 2
+#define ST_DOOR_OPENED 3
+#define ST_DOOR_CLOSING 4
+
 // 74 Series IC Control Pins
 #define RCLK_595_DDR DDRB
 #define RCLK_595_PORT PORTB

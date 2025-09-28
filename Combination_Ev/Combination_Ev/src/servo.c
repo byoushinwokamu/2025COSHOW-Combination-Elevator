@@ -23,6 +23,7 @@
 // --- 전역 변수 ---
 // =================================================================================
 static volatile uint8_t servo_angle = DOOR_CLOSED_ANGLE;
+extern volatile uint8_t ev_status;
 
 // =================================================================================
 // --- 함수 구현 ---
@@ -80,8 +81,7 @@ void servo_set_angle(uint8_t angle)
  */
 void servo_door_open(void)
 {
-  servo_set_angle(DOOR_OPEN_ANGLE);
-  _delay_ms(1000); // 문이 완전히 열릴 때까지 대기
+  servo_move_smooth(DOOR_OPEN_ANGLE, 2);
 }
 
 /**
@@ -89,8 +89,7 @@ void servo_door_open(void)
  */
 void servo_door_close(void)
 {
-  servo_set_angle(DOOR_CLOSED_ANGLE);
-  _delay_ms(1000); // 문이 완전히 닫힐 때까지 대기
+  servo_move_smooth(DOOR_CLOSED_ANGLE, 2);
 }
 
 /**
@@ -109,10 +108,7 @@ uint8_t servo_door_is_open(void)
  */
 static void delay_ms_variable(uint16_t ms)
 {
-  while (ms--)
-  {
-    _delay_ms(1);
-  }
+  while (ms--) _delay_ms(1);
 }
 
 /**
@@ -122,6 +118,7 @@ static void delay_ms_variable(uint16_t ms)
  */
 void servo_move_smooth(uint8_t target_angle, uint16_t step_delay)
 {
+  uint8_t angle;
   if (target_angle > 180)
   {
     target_angle = 180;
@@ -134,18 +131,22 @@ void servo_move_smooth(uint8_t target_angle, uint16_t step_delay)
   }
 
   // 현재 각도에서 목표 각도까지 1도씩 이동
-  if (target_angle > servo_angle)
+  if (target_angle > servo_angle) // Opening
   {
-    for (uint8_t angle = servo_angle + 1; angle <= target_angle; angle++)
+    for (angle = servo_angle + 1; angle <= target_angle; angle++)
     {
+      if (ev_status != ST_DOOR_OPENING)
+        break;
       servo_set_angle(angle);
       delay_ms_variable(step_delay);
     }
   }
-  else
+  else // Closing
   {
-    for (uint8_t angle = servo_angle - 1; angle >= target_angle && angle <= servo_angle; angle--)
+    for (angle = servo_angle - 1; angle >= target_angle && angle <= servo_angle; angle--)
     {
+      if (ev_status != ST_DOOR_CLOSING)
+        break;
       servo_set_angle(angle);
       delay_ms_variable(step_delay);
       if (angle == 0) break; // uint8_t 언더플로우 방지
