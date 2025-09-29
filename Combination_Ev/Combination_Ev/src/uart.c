@@ -1,7 +1,7 @@
 #include "uart.h"
 
 extern volatile uint8_t task_queue[5];
-extern volatile uint8_t direction;
+extern volatile uint8_t ev_current_dir;
 
 void uart_init(uint16_t baudrate)
 {
@@ -47,7 +47,7 @@ void enqueue(uint8_t floor, uint8_t dir)
   {
     if (task_queue[i])
     {
-      if ((dir & (1 << 7)) != (direction & (1 << 7))) // Opposite
+      if ((dir & (1 << 7)) != (ev_current_dir & (1 << 7))) // Opposite
         continue;
       else if (dir & (1 << 7)) // Descending
       {

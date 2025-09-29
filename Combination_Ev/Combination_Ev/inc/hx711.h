@@ -1,13 +1,10 @@
 #ifndef LOADCELL_H_
 #define LOADCELL_H_
 
-<<<<<<< HEAD
-#include <stdbool.h>
-=======
 #include "pinmacro.h"
 
+#include <stdbool.h>
 #include <stdint.h>
->>>>>>> main
 
 // --- 사용자 설정 ---
 // 이 값들을 수정하여 엘리베이터의 사양을 쉽게 변경할 수 있습니다.
@@ -43,7 +40,7 @@ float loadcell_get_weight_g(void);
  */
 bool loadcell_is_overload(void);
 
-//RAW값 반환
+// RAW값 반환
 long loadcell_get_raw_value(void);
 
 #endif /* LOADCELL_H_ */

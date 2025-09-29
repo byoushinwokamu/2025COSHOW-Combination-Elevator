@@ -15,6 +15,8 @@ volatile uint8_t dest_dir = DIR_IDLE;
 volatile uint8_t rxbuf = 0;
 volatile uint8_t is_req = 0; // 1: Compare to the other E/V, 0: I go
 
+static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
+
 // PC3: Home Sw.
 // PC4: Door Sensor Sw.
 ISR(PCINT1_vect)
