@@ -246,6 +246,7 @@ void handle_door_opening_state()
 {
   // 서보모터로 문 열기
   servo_door_open();
+  ev_state = ST_DOOR_OPENED;
   
   // // 서보모터 각도를 확인하여 문 열림 완료 판단
   // if (servo_door_is_open()) {
