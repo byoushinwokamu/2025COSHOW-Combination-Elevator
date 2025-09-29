@@ -6,6 +6,10 @@
 // 외부 함수 선언
 extern void stepper_reset_position(void);
 extern void set_bell_led_timer(void);
+extern void enqueue(uint8_t floor, uint8_t dir); // uart.c에 구현됨
+
+// 내부 함수 선언
+static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
 
 extern volatile uint16_t swinput;
 extern volatile uint16_t door_holding;
@@ -44,35 +48,37 @@ ISR(PCINT1_vect)
   }
 }
 
-// PD5: Any Switch Int.
+// PD5: Any Switch Int. (다이오드 OR 게이트로 연결된 모든 스위치)
 ISR(PCINT2_vect)
 {
-  // Read switch input
-  swinput = ic165_read();
-
-  // Process input
-  if (swinput & (1 << SW_CAR_OPEN_BIT))
+  // 74HC165에서 스위치 상태 읽기 (Active Low)
+  uint16_t switch_data = ic165_read();
+  
+  // 버튼이 눌렸는지 확인 (0 = 눌림, 1 = 안눌림)
+  // 각 버튼에 대해 LOW(0) 상태를 감지
+  
+  // 카 내부 버튼들 (Active Low)
+  if (!(switch_data & (1 << SW_CAR_OPEN_BIT)))
   {
     ev_state = ST_DOOR_OPENING;
     door_holding = 0;
-    // 문 열기 버튼 LED 켜기 (일시적)
+    // 문 열기 버튼 LED 켜기
     ic595_ledset(LED_CAR_OPEN_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CAR_CLOSE_BIT))
+  if (!(switch_data & (1 << SW_CAR_CLOSE_BIT)))
   {
     if (ev_state != ST_DOOR_OPENED) return;
     ev_state = ST_DOOR_CLOSING;
     door_holding = 0;
-    // 문 닫기 버튼 LED 켜기 (일시적)
+    // 문 닫기 버튼 LED 켜기
     ic595_ledset(LED_CAR_CLOSE_BIT, 1);
     ic595_update();
     return;
   }
-  if (swinput & (1 << SW_CAR_1F_BIT))
+  if (!(switch_data & (1 << SW_CAR_1F_BIT)))
   {
     if (ev_current_dir == DIR_ASCENDING) return;
-    enqueue(1, ev_current_dir);
     dest_floor = 1;
     dest_dir = ev_current_dir;
     is_req = 0;
@@ -80,11 +86,10 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CAR_1F_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CAR_2F_BIT))
+  if (!(switch_data & (1 << SW_CAR_2F_BIT)))
   {
     if (ev_current_dir == DIR_ASCENDING && ev_current_floor >= 2) return;
     if (ev_current_dir == DIR_DESCENDING && ev_current_floor <= 2) return;
-    enqueue(2, ev_current_dir);
     dest_floor = 2;
     dest_dir = ev_current_dir;
     is_req = 0;
@@ -92,7 +97,7 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CAR_2F_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CAR_3F_BIT))
+  if (!(switch_data & (1 << SW_CAR_3F_BIT)))
   {
     if (ev_current_dir == DIR_ASCENDING && ev_current_floor >= 3) return;
     if (ev_current_dir == DIR_DESCENDING && ev_current_floor <= 3) return;
@@ -103,7 +108,7 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CAR_3F_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CAR_4F_BIT))
+  if (!(switch_data & (1 << SW_CAR_4F_BIT)))
   {
     if (ev_current_dir == DIR_DESCENDING) return;
     dest_floor = 4;
@@ -113,16 +118,16 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CAR_4F_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CAR_BELL_BIT))
+  if (!(switch_data & (1 << SW_CAR_BELL_BIT)))
   {
-    // 벨 버튼 LED 켜기 (점멸 효과를 위해 main.c에서 처리)
+    // 벨 버튼 LED 켜기
     ic595_ledset(LED_CAR_BELL_BIT, 1);
     ic595_update();
     set_bell_led_timer(); // 벨 LED 타이머 설정
-    // Bell behavior - 추가 기능 구현 가능
   }
 
-  if (swinput & (1 << SW_CALL_1F_UP_BIT))
+  // 외부 호출 버튼들 (Active Low)
+  if (!(switch_data & (1 << SW_CALL_1F_UP_BIT)))
   {
     uart_tx_data(0, 1, DIR_ASCENDING, 0);
     dest_floor = 1;
@@ -132,7 +137,7 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CALL_1F_UP_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CALL_2F_UP_BIT))
+  if (!(switch_data & (1 << SW_CALL_2F_UP_BIT)))
   {
     uart_tx_data(0, 2, DIR_ASCENDING, 0);
     dest_floor = 2;
@@ -142,7 +147,7 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CALL_2F_UP_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CALL_3F_UP_BIT))
+  if (!(switch_data & (1 << SW_CALL_3F_UP_BIT)))
   {
     uart_tx_data(0, 3, DIR_ASCENDING, 0);
     dest_floor = 3;
@@ -152,7 +157,7 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CALL_3F_UP_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CALL_2F_DOWN_BIT))
+  if (!(switch_data & (1 << SW_CALL_2F_DOWN_BIT)))
   {
     uart_tx_data(0, 2, DIR_DESCENDING, 0);
     dest_floor = 2;
@@ -162,7 +167,7 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CALL_2F_DOWN_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CALL_3F_DOWN_BIT))
+  if (!(switch_data & (1 << SW_CALL_3F_DOWN_BIT)))
   {
     uart_tx_data(0, 3, DIR_DESCENDING, 0);
     dest_floor = 3;
@@ -172,7 +177,7 @@ ISR(PCINT2_vect)
     ic595_ledset(LED_CALL_3F_DOWN_BIT, 1);
     ic595_update();
   }
-  if (swinput & (1 << SW_CALL_4F_DOWN_BIT))
+  if (!(switch_data & (1 << SW_CALL_4F_DOWN_BIT)))
   {
     uart_tx_data(0, 4, DIR_DESCENDING, 0);
     dest_floor = 4;
@@ -183,6 +188,7 @@ ISR(PCINT2_vect)
     ic595_update();
   }
 
+  // 작업 큐에 추가 처리
   if (is_req) // External Button Pushed
   {
     // Evaluate score of current E/V
@@ -191,8 +197,11 @@ ISR(PCINT2_vect)
   }
   else // Internal Button Pushed
   {
-    enqueue(dest_floor, dest_dir);
+    enqueue(dest_floor, dest_dir); // uart.c의 enqueue 함수 사용
   }
+  
+  // 현재 스위치 상태 저장 (다음 비교를 위해)
+  swinput = switch_data;
 }
 
 // UART Receive

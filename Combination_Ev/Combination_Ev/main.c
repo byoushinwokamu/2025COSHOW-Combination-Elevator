@@ -123,9 +123,13 @@ void init()
   PCICR |= (1 << PCIE1);
   PCMSK1 |= (1 << PCINT11) | (1 << PCINT12);
   
-  // PCINT2: 스위치 인터럽트 활성화 (가정: PD5에 인터럽트 신호 연결)
+  // PCINT2: PD5 스위치 인터럽트 활성화 (다이오드 OR 게이트 출력)
   PCICR |= (1 << PCIE2);
-  PCMSK2 |= (1 << PCINT21);
+  PCMSK2 |= (1 << PCINT21);  // PD5 = PCINT21
+  
+  // PD5를 입력으로 설정 (외부 풀업 저항 사용)
+  DDRD &= ~(1 << PD5);   // PD5를 입력으로 설정
+  PORTD &= ~(1 << PD5);  // 내부 풀업 비활성화 (외부 풀업 사용)
   
   // 전역 인터럽트 활성화
   sei();

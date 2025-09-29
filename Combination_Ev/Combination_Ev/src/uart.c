@@ -36,7 +36,7 @@ uint8_t uart_rx_byte()
 
 void uart_tx_data(uint8_t score, uint8_t floor, uint8_t dir, uint8_t assign)
 {
-  uart_tx_byte((floor << UART_FLOOR_BIT) | (dir < UART_DIRECTION_BIT) | (assign << UART_ASSIGN_BIT));
+  uart_tx_byte((floor << UART_FLOOR_BIT) | (dir << UART_DIRECTION_BIT) | (assign << UART_ASSIGN_BIT));
 }
 
 void enqueue(uint8_t floor, uint8_t dir)
