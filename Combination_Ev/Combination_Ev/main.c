@@ -66,7 +66,6 @@ void init()
   // 리미트 스위치 핀 입력으로 설정
   // 외부 풀업 저항이 있으므로, 내부 풀업(PORTC) 설정은 하지 않음
   LS_HOME_DDR &= ~(1 << LS_HOME_PIN);
-  LS_DOOR_OPEN_DDR &= ~(1 << LS_DOOR_OPEN_PIN);
   LS_DOOR_CLOSED_DDR &= ~(1 << LS_DOOR_CLOSED_PIN);
 
   // 스텝모터 제어핀 출력 설정
@@ -81,10 +80,6 @@ void init()
   // HX711 로드셀 핀 설정
   HX711_DT_DDR &= ~(1 << HX711_DT_PIN);  // DT 입력
   HX711_SCK_DDR |= (1 << HX711_SCK_PIN); // SCK 출력
-
-  // IR 송수신기 핀 설정
-  IR_TX_DDR |= (1 << IR_TX_PIN);  // IR TX 출력
-  IR_RX_DDR &= ~(1 << IR_RX_PIN); // IR RX 입력
 
   // UART 핀 설정
   UART_TX_DDR |= (1 << UART_TX_PIN);  // TX 출력

@@ -51,13 +51,9 @@
 #define LS_HOME_PIN_REG PINC
 #define LS_HOME_PIN PC3
 
-#define LS_DOOR_OPEN_DDR DDRC
-#define LS_DOOR_OPEN_PIN_REG PINC
-#define LS_DOOR_OPEN_PIN PC4
-
 #define LS_DOOR_CLOSED_DDR DDRC
 #define LS_DOOR_CLOSED_PIN_REG PINC
-#define LS_DOOR_CLOSED_PIN PC5
+#define LS_DOOR_CLOSED_PIN PC4
 
 // ULN2003 Stepper Motor Control Pins
 #define STEPPER_1_DDR DDRD
@@ -90,14 +86,14 @@
 #define HX711_SCK_PORT PORTC
 #define HX711_SCK_PIN PC1
 
-// IR Tx/Rx Pins
-#define IR_TX_DDR DDRB
-#define IR_TX_PORT PORTB
-#define IR_TX_PIN PB1
+// // IR Tx/Rx Pins
+// #define IR_TX_DDR DDRB
+// #define IR_TX_PORT PORTB
+// #define IR_TX_PIN PB1
 
-#define IR_RX_DDR DDRD
-#define IR_RX_PIN_REG PIND
-#define IR_RX_PIN PD2
+// #define IR_RX_DDR DDRD
+// #define IR_RX_PIN_REG PIND
+// #define IR_RX_PIN PD2
 
 // UART Pins
 #define UART_RX_DDR DDRD
