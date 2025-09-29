@@ -28,27 +28,39 @@ int main(void)
   init();
   while (1)
   {
-    switch (ev_state)
-    {
-    case ST_IDLE:
-      break;
+<<<<<<< HEAD
+    // 모든 스위치 상태 읽기
+    swinput = ic165_read();
 
-    case ST_MOVING:
-      break;
+    // --------------------------------------------------------------------------
+    // --- 버튼 입력 처리 로직 ---
+    // --------------------------------------------------------------------------
 
-    case ST_DOOR_OPENING:
-      servo_door_open();
-      break;
+    // 카 내부 1층 버튼
+    if (!(swinput & (1 << SW_CAR_1F_BIT)))
+      == == == =
+                   switch (ev_status)
+>>>>>>> main
+      {
+      case ST_IDLE:
+        break;
 
-    case ST_DOOR_OPENED:
-      // Hold until time elapsed or close button is pushed
-      if (++door_holding == DOOR_HOLD_TIME) ev_state = ST_DOOR_CLOSING;
-      break;
+      case ST_MOVING:
+        break;
 
-    case ST_DOOR_CLOSING:
-      servo_door_close();
-      break;
-    }
+      case ST_DOOR_OPENING:
+        servo_door_open();
+        break;
+
+      case ST_DOOR_OPENED:
+        // Hold until time elapsed or close button is pushed
+        if (++door_holding == DOOR_HOLD_TIME) ev_state = ST_DOOR_CLOSING;
+        break;
+
+      case ST_DOOR_CLOSING:
+        servo_door_close();
+        break;
+      }
 
     _delay_ms(50);
   }
