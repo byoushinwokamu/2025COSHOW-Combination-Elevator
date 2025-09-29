@@ -7,6 +7,9 @@
 extern void stepper_reset_position(void);
 extern void set_bell_led_timer(void);
 extern void enqueue(uint8_t floor, uint8_t dir); // uart.c에 구현됨
+extern void handle_external_call(uint8_t floor, uint8_t direction); // main.c에 구현됨
+extern volatile uint8_t operation_mode;
+extern volatile uint16_t uart_timeout_counter;
 
 // 내부 함수 선언
 static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
@@ -129,75 +132,69 @@ ISR(PCINT2_vect)
   // 외부 호출 버튼들 (Active Low)
   if (!(switch_data & (1 << SW_CALL_1F_UP_BIT)))
   {
-    uart_tx_data(0, 1, DIR_ASCENDING, 0);
     dest_floor = 1;
     dest_dir = DIR_ASCENDING;
     is_req = 1;
     // 1층 상행 호출 LED 켜기
     ic595_ledset(LED_CALL_1F_UP_BIT, 1);
     ic595_update();
+    handle_external_call(1, DIR_ASCENDING); // 단독/2대 자동 처리
   }
   if (!(switch_data & (1 << SW_CALL_2F_UP_BIT)))
   {
-    uart_tx_data(0, 2, DIR_ASCENDING, 0);
     dest_floor = 2;
     dest_dir = DIR_ASCENDING;
     is_req = 1;
     // 2층 상행 호출 LED 켜기
     ic595_ledset(LED_CALL_2F_UP_BIT, 1);
     ic595_update();
+    handle_external_call(2, DIR_ASCENDING);
   }
   if (!(switch_data & (1 << SW_CALL_3F_UP_BIT)))
   {
-    uart_tx_data(0, 3, DIR_ASCENDING, 0);
     dest_floor = 3;
     dest_dir = DIR_ASCENDING;
     is_req = 1;
     // 3층 상행 호출 LED 켜기
     ic595_ledset(LED_CALL_3F_UP_BIT, 1);
     ic595_update();
+    handle_external_call(3, DIR_ASCENDING);
   }
   if (!(switch_data & (1 << SW_CALL_2F_DOWN_BIT)))
   {
-    uart_tx_data(0, 2, DIR_DESCENDING, 0);
     dest_floor = 2;
     dest_dir = DIR_DESCENDING;
     is_req = 1;
     // 2층 하행 호출 LED 켜기
     ic595_ledset(LED_CALL_2F_DOWN_BIT, 1);
     ic595_update();
+    handle_external_call(2, DIR_DESCENDING);
   }
   if (!(switch_data & (1 << SW_CALL_3F_DOWN_BIT)))
   {
-    uart_tx_data(0, 3, DIR_DESCENDING, 0);
     dest_floor = 3;
     dest_dir = DIR_DESCENDING;
     is_req = 1;
     // 3층 하행 호출 LED 켜기
     ic595_ledset(LED_CALL_3F_DOWN_BIT, 1);
     ic595_update();
+    handle_external_call(3, DIR_DESCENDING);
   }
   if (!(switch_data & (1 << SW_CALL_4F_DOWN_BIT)))
   {
-    uart_tx_data(0, 4, DIR_DESCENDING, 0);
     dest_floor = 4;
     dest_dir = DIR_DESCENDING;
     is_req = 1;
     // 4층 하행 호출 LED 켜기
     ic595_ledset(LED_CALL_4F_DOWN_BIT, 1);
     ic595_update();
+    handle_external_call(4, DIR_DESCENDING);
   }
 
-  // 작업 큐에 추가 처리
-  if (is_req) // External Button Pushed
+  // 내부 버튼 처리 (직접 큐에 추가)
+  if (!is_req) // Internal Button Pushed
   {
-    // Evaluate score of current E/V
-    score_a = evaluate_score(dest_floor, dest_dir);
-    uart_tx_data(score_a, ev_current_floor, ev_current_dir, 0);
-  }
-  else // Internal Button Pushed
-  {
-    enqueue(dest_floor, dest_dir); // uart.c의 enqueue 함수 사용
+    enqueue(dest_floor, dest_dir);
   }
   
   // 현재 스위치 상태 저장 (다음 비교를 위해)
@@ -208,6 +205,10 @@ ISR(PCINT2_vect)
 ISR(USART_RX_vect)
 {
   rxbuf = UDR0; // Read data
+  
+  // UART 수신 시 2대 운영 모드로 전환
+  operation_mode = 1;
+  uart_timeout_counter = 0; // 타이머 리셋
 
   if (rxbuf & (1 << UART_SENDER_BIT)) // EVB
   {

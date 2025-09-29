@@ -26,6 +26,11 @@ volatile uint16_t moving_timer = 0;       // 이동 시간 타이머
 volatile uint16_t system_timer = 0;       // 시스템 틱 카운터
 volatile uint16_t bell_led_timer_global = 0; // 벨 LED 타이머
 
+// 운영 모드 관리
+volatile uint8_t operation_mode = 0;  // 0: 단독, 1: 2대 운영
+volatile uint16_t uart_timeout_counter = 0;  // UART 통신 타임아웃
+volatile uint8_t last_uart_received = 0;     // 마지막 UART 수신 시간
+
 // 함수 프로토타입 선언
 void init();
 void safety_check();
@@ -44,6 +49,8 @@ void turn_off_car_button_led(uint8_t floor);
 void turn_off_call_button_led(uint8_t floor, uint8_t direction);
 void init_all_leds();
 void set_bell_led_timer();
+void check_operation_mode();
+void handle_external_call(uint8_t floor, uint8_t direction);
 
 int main(void)
 {
@@ -56,6 +63,9 @@ int main(void)
   
   while (1)
   {
+    // 0. 운영 모드 감지
+    check_operation_mode();
+    
     // 1. 안전 검사
     safety_check();
     
@@ -198,8 +208,9 @@ void handle_idle_state()
   {
     if (task_queue[i] != 0)
     {
-      uint8_t floor = task_queue[i] & 0b11;
-      uint8_t direction = (task_queue[i] & 0b100) >> 2;
+      // uart.c 인코딩 방식에 맞게 수정
+      uint8_t floor = (task_queue[i] >> UART_FLOOR_BIT) & 0b11;     // 비트 0-1: 층
+      uint8_t direction = (task_queue[i] >> UART_DIRECTION_BIT) & 0b11; // 비트 2-3: 방향
       if (floor == ev_current_floor)
       {
         // 현재 층에 도착 - 관련 LED 끄기
@@ -372,8 +383,15 @@ void update_display()
       ic595_fndset(15); // 빈 표시
     }
   } else {
-    // 정상일 때는 현재 층만 표시
-    ic595_fndset(ev_current_floor);
+    // 정상일 때는 현재 층 표시 + 운영 모드 표시
+    if (operation_mode == 0) {
+      // 단독 운영: 정상 표시
+      ic595_fndset(ev_current_floor);
+    } else {
+      // 2대 운영: 층 번호에 점 추가 (시각적 구분)
+      ic595_fndset(ev_current_floor);
+      // 추가적인 LED로 2대 운영 모드 표시 가능 (선택적)
+    }
   }
   
   // 조명 자동 제어 (3초 후 소등)
@@ -401,8 +419,9 @@ uint8_t get_next_task()
   
   for (uint8_t i = 0; i < 5; i++) {
     if (task_queue[i] != 0) {
-      uint8_t floor = task_queue[i] & 0b11;
-      uint8_t dir = (task_queue[i] & 0b100) >> 2;
+      // uart.c 인코딩 방식에 맞게 수정
+      uint8_t floor = (task_queue[i] >> UART_FLOOR_BIT) & 0b11;     // 비트 0-1: 층
+      uint8_t dir = (task_queue[i] >> UART_DIRECTION_BIT) & 0b11;   // 비트 2-3: 방향
       
       // 거리 계산
       int8_t distance = abs((int8_t)floor - (int8_t)ev_current_floor);
@@ -574,4 +593,43 @@ void init_all_leds()
 void set_bell_led_timer()
 {
   bell_led_timer_global = 60; // 3초 (60 * 50ms)
+}
+
+// =================================================================================
+// 운영 모드 관리 함수들
+// =================================================================================
+
+// 운영 모드 감지 (단독 vs 2대 운영)
+void check_operation_mode()
+{
+  uart_timeout_counter++;
+  
+  // 5초동안 UART 수신이 없으면 단독 모드
+  if (uart_timeout_counter > 100) { // 100 * 50ms = 5초
+    if (operation_mode != 0) {
+      operation_mode = 0; // 단독 모드
+      // 단독 모드 전환 메시지 (선택적)
+    }
+  }
+}
+
+// 외부 호출 처리 (단독/2대 대응)
+void handle_external_call(uint8_t floor, uint8_t direction)
+{
+  if (operation_mode == 0) {
+    // 단독 운영: 직접 자체 큐에 추가
+    enqueue(floor, direction);
+  } else {
+    // 2대 운영: UART 통신 + 상황에 따라 자체 처리
+    // 스코어 계산 및 전송
+    uint8_t my_score = 0;
+    for (uint8_t i = 0; i < 5; i++) {
+      if (task_queue[i] != 0) my_score++;
+    }
+    
+    uart_tx_data(my_score, ev_current_floor, ev_current_dir, 0);
+    
+    // 즐시 자체 큐에도 추가 (백업 처리)
+    enqueue(floor, direction);
+  }
 }
