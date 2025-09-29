@@ -1,6 +1,11 @@
 #include "ic165.h"
+#include "ic595.h"
 #include "pinmacro.h"
 #include "uart.h"
+
+// 외부 함수 선언
+extern void stepper_reset_position(void);
+extern void set_bell_led_timer(void);
 
 extern volatile uint16_t swinput;
 extern volatile uint16_t door_holding;
@@ -18,10 +23,25 @@ volatile uint8_t is_req = 0; // 1: Compare to the other E/V, 0: I go
 static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
 
 // PC3: Home Sw.
-// PC4: Door Sensor Sw.
+// PC4: Door Closed Sw. (Obstacle Detection)
 ISR(PCINT1_vect)
 {
-  ;
+  // PC3: 홈 위치 감지 (Active Low)
+  if (!(LS_HOME_PIN_REG & (1 << LS_HOME_PIN))) {
+    // 1층 도달 시 위치 보정
+    ev_current_floor = 1;
+    // 스텝모터 위치 리셋
+    stepper_reset_position();
+  }
+  
+  // PC4: 장애물 감지 (Active Low)
+  if (!(LS_DOOR_CLOSED_PIN_REG & (1 << LS_DOOR_CLOSED_PIN))) {
+    // 문 닫기 중에만 장애물 감지 처리
+    if (ev_state == ST_DOOR_CLOSING) {
+      ev_state = ST_DOOR_OPENING; // 직접 상태 변경
+      door_holding = 0; // 타이머 리셋
+    }
+  }
 }
 
 // PD5: Any Switch Int.
@@ -35,12 +55,18 @@ ISR(PCINT2_vect)
   {
     ev_state = ST_DOOR_OPENING;
     door_holding = 0;
+    // 문 열기 버튼 LED 켜기 (일시적)
+    ic595_ledset(LED_CAR_OPEN_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CAR_CLOSE_BIT))
   {
-    if (ev_state != door_holding) return;
+    if (ev_state != ST_DOOR_OPENED) return;
     ev_state = ST_DOOR_CLOSING;
     door_holding = 0;
+    // 문 닫기 버튼 LED 켜기 (일시적)
+    ic595_ledset(LED_CAR_CLOSE_BIT, 1);
+    ic595_update();
     return;
   }
   if (swinput & (1 << SW_CAR_1F_BIT))
@@ -50,6 +76,9 @@ ISR(PCINT2_vect)
     dest_floor = 1;
     dest_dir = ev_current_dir;
     is_req = 0;
+    // 1층 버튼 LED 켜기
+    ic595_ledset(LED_CAR_1F_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CAR_2F_BIT))
   {
@@ -59,6 +88,9 @@ ISR(PCINT2_vect)
     dest_floor = 2;
     dest_dir = ev_current_dir;
     is_req = 0;
+    // 2층 버튼 LED 켜기
+    ic595_ledset(LED_CAR_2F_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CAR_3F_BIT))
   {
@@ -67,6 +99,9 @@ ISR(PCINT2_vect)
     dest_floor = 3;
     dest_dir = ev_current_dir;
     is_req = 0;
+    // 3층 버튼 LED 켜기
+    ic595_ledset(LED_CAR_3F_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CAR_4F_BIT))
   {
@@ -74,10 +109,17 @@ ISR(PCINT2_vect)
     dest_floor = 4;
     dest_dir = ev_current_dir;
     is_req = 0;
+    // 4층 버튼 LED 켜기
+    ic595_ledset(LED_CAR_4F_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CAR_BELL_BIT))
   {
-    // Bell behavior
+    // 벨 버튼 LED 켜기 (점멸 효과를 위해 main.c에서 처리)
+    ic595_ledset(LED_CAR_BELL_BIT, 1);
+    ic595_update();
+    set_bell_led_timer(); // 벨 LED 타이머 설정
+    // Bell behavior - 추가 기능 구현 가능
   }
 
   if (swinput & (1 << SW_CALL_1F_UP_BIT))
@@ -86,6 +128,9 @@ ISR(PCINT2_vect)
     dest_floor = 1;
     dest_dir = DIR_ASCENDING;
     is_req = 1;
+    // 1층 상행 호출 LED 켜기
+    ic595_ledset(LED_CALL_1F_UP_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CALL_2F_UP_BIT))
   {
@@ -93,6 +138,9 @@ ISR(PCINT2_vect)
     dest_floor = 2;
     dest_dir = DIR_ASCENDING;
     is_req = 1;
+    // 2층 상행 호출 LED 켜기
+    ic595_ledset(LED_CALL_2F_UP_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CALL_3F_UP_BIT))
   {
@@ -100,6 +148,9 @@ ISR(PCINT2_vect)
     dest_floor = 3;
     dest_dir = DIR_ASCENDING;
     is_req = 1;
+    // 3층 상행 호출 LED 켜기
+    ic595_ledset(LED_CALL_3F_UP_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CALL_2F_DOWN_BIT))
   {
@@ -107,6 +158,9 @@ ISR(PCINT2_vect)
     dest_floor = 2;
     dest_dir = DIR_DESCENDING;
     is_req = 1;
+    // 2층 하행 호출 LED 켜기
+    ic595_ledset(LED_CALL_2F_DOWN_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CALL_3F_DOWN_BIT))
   {
@@ -114,6 +168,9 @@ ISR(PCINT2_vect)
     dest_floor = 3;
     dest_dir = DIR_DESCENDING;
     is_req = 1;
+    // 3층 하행 호출 LED 켜기
+    ic595_ledset(LED_CALL_3F_DOWN_BIT, 1);
+    ic595_update();
   }
   if (swinput & (1 << SW_CALL_4F_DOWN_BIT))
   {
@@ -121,6 +178,9 @@ ISR(PCINT2_vect)
     dest_floor = 4;
     dest_dir = DIR_DESCENDING;
     is_req = 1;
+    // 4층 하행 호출 LED 켜기
+    ic595_ledset(LED_CALL_4F_DOWN_BIT, 1);
+    ic595_update();
   }
 
   if (is_req) // External Button Pushed
