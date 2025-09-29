@@ -2,7 +2,13 @@
 #define _STEPPER_H_
 
 #include "pinmacro.h"
+<<<<<<< HEAD
+=======
+#include <avr/interrupt.h>
+#include <avr/io.h>
+>>>>>>> main
 #include <stdint.h>
+#include <util/delay.h>
 
 // =================================================================================
 // --- 함수 프로토타입 ---

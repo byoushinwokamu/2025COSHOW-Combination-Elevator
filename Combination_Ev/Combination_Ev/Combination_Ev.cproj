@@ -171,6 +171,9 @@
     <Compile Include="src\ic595.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\isr.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\servo.c">
       <SubType>compile</SubType>
     </Compile>

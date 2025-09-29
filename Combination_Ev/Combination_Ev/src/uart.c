@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 /*
  * UART driver for ATmega328P (F_CPU = 16 MHz)
  * - Mode: 8N1, Double Speed (U2X0 = 1)
@@ -75,6 +76,12 @@ void uart_send_string(const char *str)
 
 #define HEADER_STATUS 0b00000000U
 #define HEADER_ASSIGN 0b11111111U
+=======
+#include "uart.h"
+
+extern volatile uint8_t task_queue[5];
+extern volatile uint8_t ev_current_dir;
+>>>>>>> main
 
 void uart_init(uint16_t baudrate)
 {
@@ -91,8 +98,13 @@ void uart_init(uint16_t baudrate)
   // transmit enable
   UCSR0B |= (1 << TXEN0);
 
+<<<<<<< HEAD
   // receive enable
   UCSR0B |= (1 << RXEN0);
+=======
+  // receive(interrupt) enable
+  UCSR0B |= (1 << RXEN0) | (1 << RXCIE0);
+>>>>>>> main
 }
 
 void uart_tx_byte(uint8_t data)
@@ -107,6 +119,7 @@ uint8_t uart_rx_byte()
   return UDR0;
 }
 
+<<<<<<< HEAD
 void uart_tx_status(uint8_t stat)
 {
   uart_tx_byte(HEADER_STATUS);
@@ -121,5 +134,46 @@ void uart_tx_assign(uint8_t asgn)
 }
 >>>>>>> main
 =======
+}
+>>>>>>> main
+=======
+void uart_tx_data(uint8_t score, uint8_t floor, uint8_t dir, uint8_t assign)
+{
+  uart_tx_byte((floor << UART_FLOOR_BIT) | (dir < UART_DIRECTION_BIT) | (assign << UART_ASSIGN_BIT));
+}
+
+void enqueue(uint8_t floor, uint8_t dir)
+{
+  floor <<= UART_FLOOR_BIT;
+  dir <<= UART_DIRECTION_BIT;
+  for (uint8_t i = 0; i < 4; i++)
+  {
+    if (task_queue[i])
+    {
+      if ((dir & (1 << 7)) != (ev_current_dir & (1 << 7))) // Opposite
+        continue;
+      else if (dir & (1 << 7)) // Descending
+      {
+        if (floor < (task_queue[i] & (0b11 << 5))) // Under
+          continue;
+      }
+      else // Ascending
+      {
+        if (floor > (task_queue[i] & (0b11 << 5))) // Over
+          continue;
+      }
+    }
+    task_queue[i] = (floor | dir);
+    break;
+  }
+}
+
+void dequeue()
+{
+  task_queue[0] = task_queue[1];
+  task_queue[1] = task_queue[2];
+  task_queue[2] = task_queue[3];
+  task_queue[3] = task_queue[4];
+  task_queue[4] = 0;
 }
 >>>>>>> main

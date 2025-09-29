@@ -3,6 +3,31 @@
 
 #define F_CPU 16000000UL
 
+<<<<<<< HEAD
+=======
+// E/V Status Macro
+#define ST_IDLE 0
+#define ST_MOVING 1
+#define ST_DOOR_OPENING 2
+#define ST_DOOR_OPENED 3
+#define ST_DOOR_CLOSING 4
+
+#define DIR_ASCENDING 0
+#define DIR_DESCENDING 1
+#define DIR_IDLE 2
+
+// UART data bit
+#define UART_FLOOR_BIT 0
+#define UART_DIRECTION_BIT 2
+#define UART_ASSIGN_BIT 3
+#define UART_SENDER_BIT 4
+#define UART_SCORE_BIT 5
+#define UART_ASSIGN 0
+#define UART_RETURN 1
+#define UART_EVA 0
+#define UART_EVB 1
+
+>>>>>>> main
 // 74 Series IC Control Pins
 #define RCLK_595_DDR DDRB
 #define RCLK_595_PORT PORTB

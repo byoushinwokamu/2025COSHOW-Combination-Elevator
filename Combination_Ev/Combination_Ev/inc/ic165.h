@@ -3,6 +3,10 @@
 
 #include "pinmacro.h"
 
+<<<<<<< HEAD
+=======
+#include <avr/interrupt.h>
+>>>>>>> main
 #include <avr/io.h>
 #include <stdint.h>
 #include <util/delay.h>

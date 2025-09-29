@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include "ic165.h"
 #include "ic595.h"
 #include "pinmacro.h"
@@ -8,8 +9,30 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
+=======
+#include "hx711.h"
+#include "ic165.h"
+#include "ic595.h"
+#include "pinmacro.h"
+#include "servo.h"
+#include "stepper.h"
+#include "uart.h"
+
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdint.h>
+#include <util/delay.h>
+
+#define DOOR_HOLD_TIME 1000
+
+>>>>>>> main
 volatile uint16_t swinput = 0xFFFF;
+volatile uint16_t door_holding = 0;
+volatile uint8_t ev_current_dir = DIR_IDLE;
+volatile uint8_t ev_current_floor = 1;
+volatile uint8_t ev_state = ST_IDLE;
 volatile uint16_t g_light_timer_count = 0; // 3초 조명 타이머를 위한 카운트 변수
+volatile uint8_t task_queue[5];
 
 void init();
 
@@ -18,6 +41,7 @@ int main(void)
   init();
   while (1)
   {
+<<<<<<< HEAD
     // 모든 스위치 상태 읽기
     swinput = ic165_read();
     // --------------------------------------------------------------------------
@@ -112,35 +136,31 @@ int main(void)
       // (참고: 실제 엘리베이터는 현재 층을 표시해야 하므로,
       //  이 부분은 나중에 '현재 층' 변수를 받아 처리하도록 수정해야 합니다.)
       ic595_fndset(10); // 7세그먼트 끄기
-    }
-
-    // ★★★★★★★★★★★★★   추가된 조명 제어 로직   ★★★★★★★★★★★★★
-    // --------------------------------------------------------------------------
-    uint8_t should_light_be_on = 0; // 조명을 켤지 결정하는 플래그 변수
-
-    // 조건 1: 카 내부 버튼이 눌렸는지 확인
-    const uint16_t car_buttons_mask = 0x007F; // 카 내부 버튼(비트 0~6) 마스크
-    if ((swinput & car_buttons_mask) != car_buttons_mask)
+=======
+    switch (ev_state)
     {
-      should_light_be_on = 1; // 켜기
+    case ST_IDLE:
+      break;
+
+    case ST_MOVING:
+      break;
+
+    case ST_DOOR_OPENING:
+      servo_door_open();
+      break;
+
+    case ST_DOOR_OPENED:
+      // Hold until time elapsed or close button is pushed
+      if (++door_holding == DOOR_HOLD_TIME) ev_state = ST_DOOR_CLOSING;
+      break;
+
+    case ST_DOOR_CLOSING:
+      servo_door_close();
+      break;
+>>>>>>> main
     }
 
-    // 조건 2: 리미트 스위치가 눌렸는지 확인 (OR 조건)
-    if (!(LS_HOME_PIN_REG & (1 << LS_HOME_PIN)) ||
-        !(LS_DOOR_OPEN_PIN_REG & (1 << LS_DOOR_OPEN_PIN)) ||
-        !(LS_DOOR_CLOSED_PIN_REG & (1 << LS_DOOR_CLOSED_PIN)))
-    {
-      should_light_be_on = 1; // 켜기
-    }
-
-    // 최종 결정된 상태에 따라 조명 LED 제어
-    ic595_ledset(LED_CAR_LIGHT_BIT, should_light_be_on);
-    // --------------------------------------------------------------------------
-
-    // 최종 출력 상태를 시프트 레지스터로 전송
-    ic595_update();
-
-    _delay_ms(50); // 루프 지연
+    _delay_ms(50);
   }
 }
 
@@ -179,6 +199,8 @@ void init()
   // UART 핀 설정
   UART_TX_DDR |= (1 << UART_TX_PIN);  // TX 출력
   UART_RX_DDR &= ~(1 << UART_RX_PIN); // RX 입력
+
+  // 인터럽트 초기화 필요?
 
   // 초기 출력 상태 업데이트
   ic595_update();
