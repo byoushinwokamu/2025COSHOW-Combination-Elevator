@@ -15,8 +15,15 @@
 #define DIR_IDLE 2
 
 // UART data bit
-#define UART_FLOOR_BIT 5
-#define UART_DIRECTION_BIT 7
+#define UART_FLOOR_BIT 0
+#define UART_DIRECTION_BIT 2
+#define UART_ASSIGN_BIT 3
+#define UART_SENDER_BIT 4
+#define UART_SCORE_BIT 5
+#define UART_ASSIGN 0
+#define UART_RETURN 1
+#define UART_EVA 0
+#define UART_EVB 1
 
 // 74 Series IC Control Pins
 #define RCLK_595_DDR DDRB

@@ -23,7 +23,7 @@
 // --- 전역 변수 ---
 // =================================================================================
 static volatile uint8_t servo_angle = DOOR_CLOSED_ANGLE;
-extern volatile uint8_t ev_status;
+extern volatile uint8_t ev_state;
 
 // =================================================================================
 // --- 함수 구현 ---
@@ -135,7 +135,7 @@ void servo_move_smooth(uint8_t target_angle, uint16_t step_delay)
   {
     for (angle = servo_angle + 1; angle <= target_angle; angle++)
     {
-      if (ev_status != ST_DOOR_OPENING)
+      if (ev_state != ST_DOOR_OPENING)
         break;
       servo_set_angle(angle);
       delay_ms_variable(step_delay);
@@ -145,7 +145,7 @@ void servo_move_smooth(uint8_t target_angle, uint16_t step_delay)
   {
     for (angle = servo_angle - 1; angle >= target_angle && angle <= servo_angle; angle--)
     {
-      if (ev_status != ST_DOOR_CLOSING)
+      if (ev_state != ST_DOOR_CLOSING)
         break;
       servo_set_angle(angle);
       delay_ms_variable(step_delay);

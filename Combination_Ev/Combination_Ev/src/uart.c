@@ -34,16 +34,9 @@ uint8_t uart_rx_byte()
   return UDR0;
 }
 
-void uart_tx_status(uint8_t stat)
+void uart_tx_data(uint8_t score, uint8_t floor, uint8_t dir, uint8_t assign)
 {
-  uart_tx_byte(HEADER_STATUS);
-  uart_tx_byte(stat);
-}
-
-void uart_tx_assign(uint8_t asgn)
-{
-  uart_tx_byte(HEADER_ASSIGN);
-  uart_tx_byte(asgn);
+  uart_tx_byte((floor << UART_FLOOR_BIT) | (dir < UART_DIRECTION_BIT) | (assign << UART_ASSIGN_BIT));
 }
 
 void enqueue(uint8_t floor, uint8_t dir)

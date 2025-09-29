@@ -11,14 +11,15 @@
 #include <stdint.h>
 #include <util/delay.h>
 
-#define DOOR_HOLD_TIME = 1000;
+#define DOOR_HOLD_TIME 1000
 
 volatile uint16_t swinput = 0xFFFF;
 volatile uint16_t door_holding = 0;
-volatile uint8_t ev_status = IDLE;
+volatile uint8_t ev_current_dir = DIR_IDLE;
+volatile uint8_t ev_current_floor = 1;
+volatile uint8_t ev_state = ST_IDLE;
 volatile uint16_t g_light_timer_count = 0; // 3초 조명 타이머를 위한 카운트 변수
 volatile uint8_t task_queue[5];
-volatile uint8_t direction = DIR_IDLE;
 
 void init();
 
@@ -27,7 +28,7 @@ int main(void)
   init();
   while (1)
   {
-    switch (ev_status)
+    switch (ev_state)
     {
     case ST_IDLE:
       break;
@@ -41,7 +42,7 @@ int main(void)
 
     case ST_DOOR_OPENED:
       // Hold until time elapsed or close button is pushed
-      if (++door_holding == DOOR_HOLD_TIME) ev_status = ST_DOOR_CLOSING;
+      if (++door_holding == DOOR_HOLD_TIME) ev_state = ST_DOOR_CLOSING;
       break;
 
     case ST_DOOR_CLOSING:
@@ -88,6 +89,8 @@ void init()
   // UART 핀 설정
   UART_TX_DDR |= (1 << UART_TX_PIN);  // TX 출력
   UART_RX_DDR &= ~(1 << UART_RX_PIN); // RX 입력
+
+  // 인터럽트 초기화 필요?
 
   // 초기 출력 상태 업데이트
   ic595_update();
