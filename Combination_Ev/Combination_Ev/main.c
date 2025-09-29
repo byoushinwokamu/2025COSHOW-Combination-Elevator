@@ -28,7 +28,7 @@ int main(void)
   init();
   while (1)
   {
-    switch (ev_status)
+    switch (ev_state)
     {
     case ST_IDLE:
       break;
