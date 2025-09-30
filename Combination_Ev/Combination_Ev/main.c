@@ -118,10 +118,6 @@ void init()
   LS_HOME_DDR &= ~(1 << LS_HOME_PIN);
   LS_DOOR_CLOSED_DDR &= ~(1 << LS_DOOR_CLOSED_PIN);
 
-  // // IR 송수신기 핀 설정 (필요 시 사용)
-  // IR_TX_DDR |= (1 << IR_TX_PIN);  // IR TX 출력
-  // IR_RX_DDR &= ~(1 << IR_RX_PIN); // IR RX 입력
-
   // 모든 모듈 초기화
   stepper_init();
   servo_init();
@@ -260,12 +256,6 @@ void handle_door_opening_state()
   // 서보모터로 문 열기
   servo_door_open();
   ev_state = ST_DOOR_OPENED;
-
-  // // 서보모터 각도를 확인하여 문 열림 완료 판단
-  // if (servo_door_is_open()) {
-  //   ev_state = ST_DOOR_OPENED;
-  //   door_holding = 0;
-  // }
 }
 
 // =================================================================================
@@ -295,21 +285,8 @@ void handle_door_opened_state()
 // =================================================================================
 void handle_door_closing_state()
 {
-  // // Door Closed 리미트 스위치로 장애물 감지 (Active Low)
-  // if (!(LS_DOOR_CLOSED_PIN_REG & (1 << LS_DOOR_CLOSED_PIN))) {
-  //   // 장애물 감지됨 - 문 다시 열기
-  //   ev_state = ST_DOOR_OPENING;
-  //   door_holding = 0;
-  //   return;
-  // }
-
   // 서보모터로 문 닫기
   servo_door_close();
-
-  // // 서보모터 각도를 확인하여 문 닫기 완료 판단
-  // if (!servo_door_is_open()) { // 문이 닫혀있으면
-  //   ev_state = ST_IDLE;
-  // }
 }
 
 // =================================================================================
@@ -529,9 +506,6 @@ void check_floor_arrival()
     ev_current_floor = 1;
     stepper_reset_position();
   }
-
-  // 대략적인 층 계산 (스텝 수 기반)
-  // 이것은 stepper.c에서 적절히 구현되어야 함
 
   // 목표 층 도달 확인
   if (ev_current_floor == target_floor)

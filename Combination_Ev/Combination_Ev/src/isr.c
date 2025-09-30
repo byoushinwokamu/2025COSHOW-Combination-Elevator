@@ -6,7 +6,7 @@
 // 외부 함수 선언
 extern void stepper_reset_position(void);
 extern void set_bell_led_timer(void);
-extern void enqueue(uint8_t floor, uint8_t dir); // uart.c에 구현됨
+extern void enqueue(uint8_t floor, uint8_t dir);                    // uart.c에 구현됨
 extern void handle_external_call(uint8_t floor, uint8_t direction); // main.c에 구현됨
 extern volatile uint8_t operation_mode;
 extern volatile uint16_t uart_timeout_counter;
@@ -34,19 +34,22 @@ static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
 ISR(PCINT1_vect)
 {
   // PC3: 홈 위치 감지 (Active Low)
-  if (!(LS_HOME_PIN_REG & (1 << LS_HOME_PIN))) {
+  if (!(LS_HOME_PIN_REG & (1 << LS_HOME_PIN)))
+  {
     // 1층 도달 시 위치 보정
     ev_current_floor = 1;
     // 스텝모터 위치 리셋
     stepper_reset_position();
   }
-  
+
   // PC4: 장애물 감지 (Active Low)
-  if (!(LS_DOOR_CLOSED_PIN_REG & (1 << LS_DOOR_CLOSED_PIN))) {
+  if (!(LS_DOOR_CLOSED_PIN_REG & (1 << LS_DOOR_CLOSED_PIN)))
+  {
     // 문 닫기 중에만 장애물 감지 처리
-    if (ev_state == ST_DOOR_CLOSING) {
+    if (ev_state == ST_DOOR_CLOSING)
+    {
       ev_state = ST_DOOR_OPENING; // 직접 상태 변경
-      door_holding = 0; // 타이머 리셋
+      door_holding = 0;           // 타이머 리셋
     }
   }
 }
@@ -56,10 +59,10 @@ ISR(PCINT2_vect)
 {
   // 74HC165에서 스위치 상태 읽기 (Active Low)
   uint16_t switch_data = ic165_read();
-  
+
   // 버튼이 눌렸는지 확인 (0 = 눌림, 1 = 안눌림)
   // 각 버튼에 대해 LOW(0) 상태를 감지
-  
+
   // 카 내부 버튼들 (Active Low)
   if (!(switch_data & (1 << SW_CAR_OPEN_BIT)))
   {
@@ -196,7 +199,7 @@ ISR(PCINT2_vect)
   {
     enqueue(dest_floor, dest_dir);
   }
-  
+
   // 현재 스위치 상태 저장 (다음 비교를 위해)
   swinput = switch_data;
 }
@@ -205,7 +208,7 @@ ISR(PCINT2_vect)
 ISR(USART_RX_vect)
 {
   rxbuf = UDR0; // Read data
-  
+
   // UART 수신 시 2대 운영 모드로 전환
   operation_mode = 1;
   uart_timeout_counter = 0; // 타이머 리셋

@@ -43,6 +43,8 @@ void enqueue(uint8_t floor, uint8_t dir)
 {
   floor <<= UART_FLOOR_BIT;
   dir <<= UART_DIRECTION_BIT;
+
+  // 진행 방향과 같은 층을 우선적으로 처리하도록 큐에 삽입
   for (uint8_t i = 0; i < 4; i++)
   {
     if (task_queue[i])
