@@ -1,4 +1,5 @@
 #include "ic165.h"
+#include "ic595.h"
 #include "pinmacro.h"
 #include "uart.h"
 
@@ -14,6 +15,7 @@ volatile uint8_t dest_floor = 0;
 volatile uint8_t dest_dir = DIR_IDLE;
 volatile uint8_t rxbuf = 0;
 volatile uint8_t is_req = 0; // 1: Compare to the other E/V, 0: I go
+extern volatile uint32_t state;
 
 static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
 
@@ -21,7 +23,7 @@ static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
 // PC4: Door Sensor Sw.
 ISR(PCINT1_vect)
 {
-  ;
+  state = 9;
 }
 
 // PD5: Any Switch Int.
