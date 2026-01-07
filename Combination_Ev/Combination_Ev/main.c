@@ -58,7 +58,6 @@ int main(void)
 
   // 시스템 시작 메시지
   ic595_fndset(ev_current_floor);
-  ic595_ledset(LED_CAR_LIGHT_BIT, 1); // 조명 켜기
   ic595_update();
 
   while (1)
