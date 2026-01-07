@@ -36,13 +36,15 @@ uint8_t uart_rx_byte()
 
 void uart_tx_data(uint8_t score, uint8_t floor, uint8_t dir, uint8_t assign)
 {
-  uart_tx_byte((floor << UART_FLOOR_BIT) | (dir < UART_DIRECTION_BIT) | (assign << UART_ASSIGN_BIT));
+  uart_tx_byte((floor << UART_FLOOR_BIT) | (dir << UART_DIRECTION_BIT) | (assign << UART_ASSIGN_BIT));
 }
 
 void enqueue(uint8_t floor, uint8_t dir)
 {
   floor <<= UART_FLOOR_BIT;
   dir <<= UART_DIRECTION_BIT;
+
+  // 진행 방향과 같은 층을 우선적으로 처리하도록 큐에 삽입
   for (uint8_t i = 0; i < 4; i++)
   {
     if (task_queue[i])
