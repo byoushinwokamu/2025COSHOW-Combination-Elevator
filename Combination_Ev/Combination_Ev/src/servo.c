@@ -24,6 +24,7 @@
 // =================================================================================
 static volatile uint8_t servo_angle = DOOR_CLOSED_ANGLE;
 extern volatile uint8_t ev_state;
+extern volatile uint32_t state;
 
 // =================================================================================
 // --- 함수 구현 ---
@@ -81,7 +82,7 @@ void servo_set_angle(uint8_t angle)
  */
 void servo_door_open(void)
 {
-  servo_move_smooth(DOOR_OPEN_ANGLE, 2);
+  servo_move_smooth(DOOR_OPEN_ANGLE, 10);
 }
 
 /**
@@ -89,7 +90,7 @@ void servo_door_open(void)
  */
 void servo_door_close(void)
 {
-  servo_move_smooth(DOOR_CLOSED_ANGLE, 2);
+  servo_move_smooth(DOOR_CLOSED_ANGLE, 10);
 }
 
 /**
@@ -135,8 +136,6 @@ void servo_move_smooth(uint8_t target_angle, uint16_t step_delay)
   {
     for (angle = servo_angle + 1; angle <= target_angle; angle++)
     {
-      if (ev_state != ST_DOOR_OPENING)
-        break;
       servo_set_angle(angle);
       delay_ms_variable(step_delay);
     }
@@ -145,8 +144,11 @@ void servo_move_smooth(uint8_t target_angle, uint16_t step_delay)
   {
     for (angle = servo_angle - 1; angle >= target_angle && angle <= servo_angle; angle--)
     {
-      if (ev_state != ST_DOOR_CLOSING)
-        break;
+      if (state == 9)
+      {
+        servo_angle = angle;
+        return;
+      }
       servo_set_angle(angle);
       delay_ms_variable(step_delay);
       if (angle == 0) break; // uint8_t 언더플로우 방지

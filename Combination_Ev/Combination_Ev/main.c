@@ -26,12 +26,16 @@ volatile uint16_t moving_timer = 0;          // 이동 시간 타이머
 volatile uint16_t system_timer = 0;          // 시스템 틱 카운터
 volatile uint16_t bell_led_timer_global = 0; // 벨 LED 타이머
 
+<<<<<<< HEAD
+volatile uint32_t state = 0;
+=======
 // 운영 모드 관리
 volatile uint8_t operation_mode = 0;        // 0: 단독, 1: 2대 운영
 volatile uint16_t uart_timeout_counter = 0; // UART 통신 타임아웃
 volatile uint8_t last_uart_received = 0;    // 마지막 UART 수신 시간
 
 // 함수 프로토타입 선언
+>>>>>>> 1f27fee4a23132facf9a3edd74fd4b5bf8e1d406
 void init();
 void safety_check();
 void process_task_queue();
@@ -62,6 +66,155 @@ int main(void)
 
   while (1)
   {
+<<<<<<< HEAD
+    swinput = ic165_read();
+
+    // 카 내부 1층 버튼
+    if (!(swinput & (1 << SW_CAR_1F_BIT)))
+    {
+      state = 7;
+    }
+    // 카 내부 4층 버튼
+    else if (!(swinput & (1 << SW_CAR_4F_BIT)))
+    {
+      state = 3;
+    }
+    // 외부 2층 호출 (UP)
+    else if (!(swinput & (1 << SW_CALL_2F_UP_BIT)))
+    {
+      state = 1;
+    }
+    // 카 내부 문 닫힘 버튼
+    else if (!(swinput & (1 << SW_CAR_CLOSE_BIT)))
+    {
+      while (loadcell_is_overload())
+      {
+        ic595_fndset(10);
+        ic595_update();
+        _delay_ms(500);
+        ic595_fndset(2);
+        ic595_update();
+        _delay_ms(500);
+      }
+      if (state == 3) state = 4;
+    }
+    // 카 내부 문 열림 버튼
+    else if (!(swinput & (1 << SW_CAR_OPEN_BIT)))
+    {
+      if (state == 12) state++;
+    }
+    else if ((swinput & (1 << SW_CAR_OPEN_BIT)))
+    {
+      if (state == 13) state++;
+    }
+    // 아무 버튼도 눌리지 않았을 경우
+    else
+    {
+    }
+
+    switch (state)
+    {
+    case 0:
+      ic595_fndset(1);
+      break;
+    case 1:
+      ic595_ledset(LED_CALL_2F_UP_BIT, 1);
+      ic595_ledset(LED_LNT_2F_UP_BIT, 1);
+      ic595_update();
+      stepper_move_to_floor(2, 1);
+      ic595_fndset(2);
+      ic595_update();
+      state = 2;
+      break;
+    case 2:
+      ic595_ledset(LED_CAR_LIGHT_BIT, 1);
+      ic595_ledset(LED_LNT_2F_UP_BIT, 0);
+      ic595_ledset(LED_CALL_2F_UP_BIT, 0);
+      ic595_update();
+      servo_door_open();
+      break;
+    case 3:
+      ic595_ledset(LED_CAR_4F_BIT, 1);
+      ic595_update();
+      break;
+    case 4:
+      ic595_ledset(LED_CAR_CLOSE_BIT, 1);
+      ic595_update();
+      servo_door_close();
+      ic595_ledset(LED_CAR_CLOSE_BIT, 0);
+      state = 5;
+      break;
+    case 5:
+      ic595_ledset(LED_LNT_4F_UP_BIT, 1);
+      ic595_update();
+      stepper_move_to_floor(3, 2);
+      ic595_fndset(3);
+      ic595_update();
+      stepper_move_to_floor(4, 3);
+      ic595_fndset(4);
+      ic595_update();
+      state = 6;
+      ic595_ledset(LED_CAR_4F_BIT, 0);
+      ic595_ledset(LED_LNT_4F_UP_BIT, 0);
+      ic595_update();
+      break;
+    case 6:
+      servo_door_open();
+      break;
+    case 7:
+      ic595_ledset(LED_CAR_1F_BIT, 1);
+      ic595_update();
+      _delay_ms(2000);
+      state = 8;
+      break;
+    case 8:
+      servo_door_close();
+      break;
+    case 9:
+      servo_door_open();
+      _delay_ms(2000);
+      state = 10;
+      break;
+    case 10:
+      servo_door_close();
+      state = 11;
+      break;
+    case 11:
+      ic595_ledset(LED_LNT_1F_DOWN_BIT, 1);
+      ic595_update();
+      stepper_move_to_floor(3, 4);
+      ic595_fndset(3);
+      ic595_update();
+      stepper_move_to_floor(2, 3);
+      ic595_fndset(2);
+      ic595_update();
+      stepper_move_to_floor(1, 2);
+      ic595_fndset(1);
+      ic595_update();
+      state = 12;
+      break;
+    case 12:
+      ic595_ledset(LED_CAR_1F_BIT, 0);
+      ic595_ledset(LED_LNT_1F_DOWN_BIT, 0);
+      ic595_update();
+      servo_door_open();
+      break;
+    case 13:
+      ic595_ledset(LED_CAR_OPEN_BIT, 1);
+      ic595_update();
+      break;
+    case 14:
+      ic595_ledset(LED_CAR_OPEN_BIT, 0);
+      ic595_update();
+      servo_door_close();
+      _delay_ms(2000);
+      ic595_ledset(LED_CAR_LIGHT_BIT, 0);
+      ic595_update();
+      break;
+    }
+
+    ic595_update();
+=======
     // 0. 운영 모드 감지
     check_operation_mode();
 
@@ -99,6 +252,7 @@ int main(void)
     update_display();
 
     // 5. 시스템 틱 (50ms 주기)
+>>>>>>> 1f27fee4a23132facf9a3edd74fd4b5bf8e1d406
     _delay_ms(50);
   }
 }
@@ -123,6 +277,17 @@ void init()
   loadcell_init();
   uart_init(31250); // 31.25kbps
 
+<<<<<<< HEAD
+  // 서보모터 PWM 핀 출력 설정
+  SERVO_DDR |= (1 << SERVO_PIN);
+  servo_init();
+
+  // HX711 로드셀 핀 설정
+  HX711_DT_DDR &= ~(1 << HX711_DT_PIN);  // DT 입력
+  HX711_SCK_DDR |= (1 << HX711_SCK_PIN); // SCK 출력
+  loadcell_init();
+  loadcell_tare();
+=======
   // 인터럽트 설정
   // PCINT1: PC3(Home), PC4(Door Closed) 인터럽트 활성화
   PCICR |= (1 << PCIE1);
@@ -131,16 +296,25 @@ void init()
   // PCINT2: PD5 스위치 인터럽트 활성화 (다이오드 OR 게이트 출력)
   PCICR |= (1 << PCIE2);
   PCMSK2 |= (1 << PCINT21); // PD5 = PCINT21
+>>>>>>> 1f27fee4a23132facf9a3edd74fd4b5bf8e1d406
 
   // PD5를 입력으로 설정 (외부 풀업 저항 사용)
   DDRD &= ~(1 << PD5);  // PD5를 입력으로 설정
   PORTD &= ~(1 << PD5); // 내부 풀업 비활성화 (외부 풀업 사용)
 
+<<<<<<< HEAD
+  // 인터럽트 초기화 필요?
+  PCMSK1 |= (1 << PCINT12);
+  PCICR |= (1 << PCIE1);
+  PCIFR |= (1 << PCIF1);
+  sei();
+=======
   // 전역 인터럽트 활성화
   sei();
 
   // 모든 LED 초기화 (끄기)
   init_all_leds();
+>>>>>>> 1f27fee4a23132facf9a3edd74fd4b5bf8e1d406
 
   // 초기 출력 상태 업데이트
   ic595_update();

@@ -26,6 +26,7 @@ volatile uint8_t dest_floor = 0;
 volatile uint8_t dest_dir = DIR_IDLE;
 volatile uint8_t rxbuf = 0;
 volatile uint8_t is_req = 0; // 1: Compare to the other E/V, 0: I go
+extern volatile uint32_t state;
 
 static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
 
@@ -33,6 +34,9 @@ static uint8_t evaluate_score(uint8_t floor, uint8_t dir);
 // PC4: Door Closed Sw. (Obstacle Detection)
 ISR(PCINT1_vect)
 {
+<<<<<<< HEAD
+  state = 9;
+=======
   // PC3: 홈 위치 감지 (Active Low)
   if (!(LS_HOME_PIN_REG & (1 << LS_HOME_PIN)))
   {
@@ -52,6 +56,7 @@ ISR(PCINT1_vect)
       door_holding = 0;           // 타이머 리셋
     }
   }
+>>>>>>> 1f27fee4a23132facf9a3edd74fd4b5bf8e1d406
 }
 
 // PD5: Any Switch Int. (다이오드 OR 게이트로 연결된 모든 스위치)

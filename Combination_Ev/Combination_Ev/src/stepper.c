@@ -12,7 +12,7 @@
 
 // 스텝모터 제어 상수
 // 28BYJ-48 실제 측정값: Full Step 모드에서 약 2038 스텝/회전
-#define STEPS_PER_REVOLUTION 2038 // 28BYJ-48: 실제 측정 기준값 (1바퀴 정확히)
+#define STEPS_PER_REVOLUTION 2000 // 28BYJ-48: 실제 측정 기준값 (1바퀴 정확히)
 #define STEP_DELAY_MS 5           // 각 스텝 사이의 지연시간 (ms) - 안정적인 동작을 위해 증가
 
 // 스텝 시퀀스 패턴 (Full Step sequence for 28BYJ-48)
@@ -225,17 +225,17 @@ void stepper_move_to_floor(uint8_t target_floor, uint8_t current_floor)
   }
 
   // 층 간 이동에 필요한 스텝 수 (예: 층당 1024 스텝)
-  const uint16_t steps_per_floor = STEPS_PER_REVOLUTION / 4;
+  const uint16_t steps_per_floor = STEPS_PER_REVOLUTION;
 
-  int8_t floor_difference = target_floor - current_floor;
-  int16_t steps_to_move = floor_difference * steps_per_floor;
+  uint8_t floor_difference = (target_floor > current_floor) ? (target_floor - current_floor) : (current_floor - target_floor);
+  uint16_t steps_to_move = floor_difference * steps_per_floor;
 
-  if (steps_to_move > 0)
+  if (target_floor > current_floor)
   {
     stepper_move_steps(steps_to_move, STEPPER_DIRECTION_CW);
   }
   else
   {
-    stepper_move_steps(-steps_to_move, STEPPER_DIRECTION_CCW);
+    stepper_move_steps(steps_to_move, STEPPER_DIRECTION_CCW);
   }
 }
